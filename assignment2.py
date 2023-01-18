@@ -1,30 +1,41 @@
 import pandas as pd
 import math
 
-# Load data ke Pandas dataframe
-df = pd.read_excel('dataset.xlsx', sheet_name='contoh')
+# Load data to Pandas dataframe
+df = pd.read_excel('dataset.xlsx', sheet_name='sheet1')
 
-# Cek data anomalies
+# Check data anomalies
 def check_anomalies(dataframe):
     for column in dataframe.columns:
-        # Check for missing values
+        # Check missing datas
         if dataframe[column].isnull().sum() > 0:
             print("Anomalies found in column '{}': {} missing values".format(column, dataframe[column].isnull().sum()))
-
+         # Check for data outliers
+        if column == 'job':
+            for job in dataframe['job'].unique():
+                if dataframe[dataframe['job']==job].shape[0] < 5:
+                    outliers = dataframe.loc[dataframe['job']==job]
+                    print("Anomalies found in column '{}': Outlier job '{}'\n{}".format(column,job,outliers.to_string()))
+        
 check_anomalies(df)
 
 # Solve anomalies
 def solve_anomalies(dataframe):
     for column in dataframe.columns:
-        # Isi missing data di kolom age & salary dengan mean
+        # Fill missing datas with mean
         if column in ['age', 'salary']:
             for job in dataframe['job'].unique():
                 mask = (dataframe['job'] == job) & (dataframe[column].isnull())
                 mean = math.floor(dataframe.loc[dataframe['job'] == job][column].mean())
                 dataframe.loc[mask, column] = mean
+        # Remove outlier jobs
+        for job in dataframe['job'].unique():
+            if dataframe[dataframe['job']==job].shape[0] < 5:
+                dataframe = dataframe[dataframe.job != job]
+        
     return dataframe
 
 df = solve_anomalies(df)
 
-# Output jadi file baru tanpa indexing
+# Save to new file without numbering
 df.to_excel('output.xlsx', index=False)
